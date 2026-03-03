@@ -17,31 +17,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const importInput = document.getElementById('import-txt');
 
     let guests = [];
+    let isSupabaseOnline = false;
 
     // Check if Supabase is configured
     if (!supabaseClient || SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') {
         console.warn("Supabase not configured. Falling back to local mode.");
+        isSupabaseOnline = false;
         guests = JSON.parse(localStorage.getItem('guest-list')) || [];
         updateUI(false);
     } else {
         fetchSupabaseData();
-        setupRealtime();
     }
 
     async function fetchSupabaseData() {
-        const { data, error } = await supabaseClient
-            .from('guests')
-            .select('*')
-            .order('created_at', { ascending: false });
+        try {
+            const { data, error } = await supabaseClient
+                .from('guests')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-        if (error) {
-            console.error('Error fetching data:', error);
-            // Fallback to local if server is down
+            if (error) {
+                console.error('Error fetching data:', error);
+                isSupabaseOnline = false;
+                // Fallback to local if server is down or table is missing
+                guests = JSON.parse(localStorage.getItem('guest-list')) || [];
+            } else {
+                isSupabaseOnline = true;
+                guests = data;
+                // Backup to local storage for offline view
+                localStorage.setItem('guest-list', JSON.stringify(guests));
+                setupRealtime(); // Only setup realtime if server is responding
+            }
+        } catch (e) {
+            console.error('Supabase initialization failed:', e);
+            isSupabaseOnline = false;
             guests = JSON.parse(localStorage.getItem('guest-list')) || [];
-        } else {
-            guests = data;
-            // Backup to local storage for offline view
-            localStorage.setItem('guest-list', JSON.stringify(guests));
         }
         updateUI(false);
     }
@@ -67,27 +77,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = parseInt(countInput.value);
 
         if (name && count > 0) {
-            if (supabaseClient && SUPABASE_URL !== 'YOUR_SUPABASE_PROJECT_URL') {
-                const { error } = await supabaseClient
-                    .from('guests')
-                    .insert([{ name, count }]);
+            // 1. Create the guest object (Optimistic)
+            const tempId = 'temp-' + Date.now();
+            const newGuest = {
+                id: tempId,
+                name,
+                count,
+                created_at: new Date().toISOString()
+            };
 
-                if (error) {
-                    alert('Error saving to Supabase: ' + error.message);
-                } else {
-                    // UI will update via Realtime channel!
-                    nameInput.value = '';
-                    countInput.value = '1';
-                    nameInput.focus();
+            // 2. Update UI Immediately (Optimistic Update)
+            guests.unshift(newGuest);
+            updateUI(true);
+
+            // 3. Reset form for better UX
+            nameInput.value = '';
+            countInput.value = '1';
+            nameInput.focus();
+
+            // 4. Cloud Synchronization
+            if (isSupabaseOnline) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('guests')
+                        .insert([{ name, count }])
+                        .select();
+
+                    if (error) {
+                        console.error('Save failed:', error);
+                        alert('Guest saved locally, but failed to sync to cloud: ' + error.message);
+                    } else if (data && data[0]) {
+                        // Replace temp record with real server record to get the correct ID
+                        const index = guests.findIndex(g => g.id === tempId);
+                        if (index !== -1) {
+                            guests[index] = data[0];
+                            // No need to call updateUI here if realtime is active, 
+                            // but good for immediate ID consistency
+                            updateUI(true);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Connection error during sync:', err);
                 }
-            } else {
-                // Local Mode fallback
-                const newGuest = { id: Date.now(), name, count, created_at: new Date() };
-                guests.unshift(newGuest);
-                updateUI(true);
-                nameInput.value = '';
-                countInput.value = '1';
-                nameInput.focus();
             }
         }
     });
