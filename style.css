@@ -58,17 +58,19 @@ body {
 
 /* Top Panel Style */
 .top-panel {
-    padding: 24px 40px;
+    padding: 32px 40px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
+    text-align: center;
     background: rgba(255, 255, 255, 0.4);
     border-radius: 24px 24px 0 0;
 }
 
 .logo {
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 16px;
 }
@@ -76,6 +78,7 @@ body {
 .header-text {
     display: flex;
     flex-direction: column;
+    align-items: center;
 }
 
 .logo h1 {
@@ -102,7 +105,8 @@ body {
 
 .stats-container {
     display: flex;
-    gap: 20px;
+    gap: 16px;
+    margin-top: 24px;
 }
 
 .stat-card {
