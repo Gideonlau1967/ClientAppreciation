@@ -123,6 +123,88 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Event Delegation for Edit/Delete
+    guestList.addEventListener('click', (e) => {
+        const item = e.target.closest('.guest-item');
+        if (!item) return;
+
+        const guestId = item.dataset.id;
+        const guestIndex = guests.findIndex(g => String(g.id) === String(guestId));
+        if (guestIndex === -1) return;
+
+        if (e.target.closest('.btn-delete')) {
+            deleteGuest(guestId, guestIndex);
+        } else if (e.target.closest('.btn-edit')) {
+            editGuest(guestId, guestIndex);
+        }
+    });
+
+    async function deleteGuest(id, index) {
+        if (!confirm('Are you sure you want to delete this guest?')) return;
+
+        // Optimistic Delete
+        const guestToDelete = guests[index];
+        guests.splice(index, 1);
+        updateUI(true);
+
+        if (isSupabaseOnline && !String(id).startsWith('temp-')) {
+            try {
+                const { error } = await supabaseClient
+                    .from('guests')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('Delete failed:', error);
+                    alert('Failed to delete from cloud. It will reappear on next refresh.');
+                    // Revert if critical
+                    guests.splice(index, 0, guestToDelete);
+                    updateUI(true);
+                }
+            } catch (err) {
+                console.error('Delete connection error:', err);
+            }
+        }
+    }
+
+    async function editGuest(id, index) {
+        const guest = guests[index];
+        const newName = prompt('Enter new name:', guest.name);
+        if (newName === null) return;
+
+        const newCountStr = prompt('Enter number of people:', guest.count);
+        if (newCountStr === null) return;
+
+        const newCount = parseInt(newCountStr);
+        if (isNaN(newCount) || newCount < 1) {
+            alert('Invalid number of guests.');
+            return;
+        }
+
+        // Optimistic Update
+        const oldGuest = { ...guest };
+        guests[index] = { ...guest, name: newName, count: newCount };
+        updateUI(true);
+
+        if (isSupabaseOnline && !String(id).startsWith('temp-')) {
+            try {
+                const { error } = await supabaseClient
+                    .from('guests')
+                    .update({ name: newName, count: newCount })
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('Update failed:', error);
+                    alert('Update failed on cloud: ' + error.message);
+                    guests[index] = oldGuest; // Revert
+                    updateUI(true);
+                }
+            } catch (err) {
+                console.error('Update connection error:', err);
+            }
+        }
+    }
+
     // Export Logic
     exportBtn.addEventListener('click', () => {
         if (guests.length === 0) {
@@ -219,7 +301,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="name">${escapeHTML(guest.name)}</span>
                     <span class="count">${guest.count} ${guest.count === 1 ? 'person' : 'people'}</span>
                 </div>
-                <div class="guest-badge">+${guest.count}</div>
+                <div class="guest-actions">
+                    <button class="btn-icon btn-edit" title="Edit Guest">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="btn-icon btn-delete" title="Delete Guest">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                    <div class="guest-badge">+${guest.count}</div>
+                </div>
             </li>
         `).join('');
     }
