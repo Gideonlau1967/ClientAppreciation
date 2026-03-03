@@ -18,6 +18,13 @@
     box-sizing: border-box;
 }
 
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: var(--font-main);
     background-color: var(--bg-color);
@@ -30,12 +37,15 @@ body {
     justify-content: center;
     align-items: center;
     padding: 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .app-container {
     width: 100%;
     max-width: 1400px;
     height: 90vh;
+    /* Fixed height for desktop */
     min-height: 700px;
     background: var(--panel-bg);
     backdrop-filter: blur(20px);
@@ -175,6 +185,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     animation: slideIn 0.4s ease-out;
     transition: all 0.2s ease;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -404,13 +415,21 @@ body {
 
 /* Responsive Adjustments */
 @media (max-width: 1024px) {
+    body {
+        padding: 10px;
+        align-items: flex-start;
+    }
+
     .main-content {
         grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
     }
 
     .app-container {
         height: auto;
-        min-height: auto;
+        min-height: 0;
+        max-height: none;
     }
 
     .left-panel {
@@ -421,7 +440,7 @@ body {
 
     .right-panel {
         order: 1;
-        padding: 24px;
+        padding: 20px;
         border-bottom: 1px solid var(--border-color);
     }
 
@@ -438,39 +457,43 @@ body {
 
     .app-container {
         border-radius: 0;
+        border: none;
     }
 
     .top-panel {
-        flex-direction: column;
-        gap: 20px;
-        align-items: flex-start;
-        padding: 24px;
-    }
-
-    .stats-container {
-        width: 100%;
-        gap: 12px;
-    }
-
-    .stat-card {
-        flex: 1;
-        min-width: 0;
+        padding: 20px;
     }
 
     .logo {
-        gap: 12px;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
     }
 
-    .logo h1 {
-        font-size: 1.5rem;
+    .logo-icon {
+        margin-bottom: 10px;
     }
 
-    .sub-title {
-        font-size: 1rem;
+    .stats-container {
+        margin-top: 15px;
     }
 
-    .card {
-        padding: 24px;
+    .guest-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .guest-info {
+        width: 100%;
+    }
+
+    .guest-actions {
+        width: 100%;
+        justify-content: space-between;
+        padding-top: 10px;
+        border-top: 1px dashed var(--border-color);
     }
 }
 
