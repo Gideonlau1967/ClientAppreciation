@@ -1,8 +1,0 @@
-GUEST LIST SYSTEM - TOTAL GUESTS: 15
-----------------------------------------
-
-1. Alice Freeman            | People: 2
-2. Bob Johnson             | People: 5
-3. Charlie Brown           | People: 8
-
-Generated on: 3/3/2026, 3:30:00 PM
