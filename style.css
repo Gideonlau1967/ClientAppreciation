@@ -59,7 +59,7 @@ body {
 
 /* Top Panel Style */
 .top-panel {
-    padding: 48px 40px;
+    padding: 24px 20px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -75,7 +75,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
 }
 
 .header-text {
@@ -85,7 +85,7 @@ body {
 }
 
 .logo h1 {
-    font-size: 2.25rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.7px;
     line-height: 1.1;
@@ -93,14 +93,14 @@ body {
 }
 
 .sub-title {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--accent-color);
-    margin-bottom: 6px;
+    margin-bottom: 2px;
 }
 
 .event-details {
-    font-size: 1rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
     font-weight: 500;
 }
@@ -109,8 +109,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    margin-top: 24px;
+    gap: 8px;
+    margin-top: 12px;
     width: 100%;
 }
 
@@ -118,20 +118,20 @@ body {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 16px;
+    gap: 10px;
     width: 100%;
 }
 
 .stat-card {
     background: #ffffff;
-    padding: 16px 20px;
-    border-radius: 20px;
+    padding: 8px 12px;
+    border-radius: 12px;
     border: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     align-items: center;
     flex: 1;
-    min-width: 120px;
+    min-width: 100px;
     max-width: 160px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -147,34 +147,34 @@ body {
     background: #334155;
     border-color: #1e293b;
     color: white;
-    padding: 10px 14px;
+    padding: 6px 10px;
     /* Smaller padding */
 }
 
 .stat-dark .stat-label {
     color: rgba(255, 255, 255, 0.7);
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     /* Smaller font size */
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .stat-dark .stat-value {
     color: white;
-    font-size: 1.25rem;
+    font-size: 1rem;
     /* Smaller value */
 }
 
 .stat-label {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 1.2px;
     color: var(--text-secondary);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     font-weight: 600;
 }
 
 .stat-value {
-    font-size: 1.75rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--accent-color);
 }
@@ -267,6 +267,13 @@ body {
     font-size: 1rem;
     color: var(--text-primary);
     margin-bottom: 2px;
+}
+
+.guest-info .advisor {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
 }
 
 .guest-info .count {

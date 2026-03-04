@@ -104,8 +104,8 @@
                     <h3>Add New Guest</h3>
                     <form id="guest-form" class="guest-form">
                         <div class="input-group">
-                            <label for="guest-name">Advisor Name (Inviter)</label>
-                            <input type="text" id="guest-name" name="name" placeholder="e.g. John Doe" required>
+                            <label for="advisor-name">Advisor Name (Inviter)</label>
+                            <input type="text" id="advisor-name" name="name" placeholder="e.g. John Doe" required>
                         </div>
                         <div class="input-group">
                             <label>Group</label>
@@ -128,11 +128,29 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="input-group">
-                            <label for="guest-count">Number of Guests</label>
-                            <input type="number" id="guest-count" name="count" min="1" value="1" required>
+
+                        <div class="input-group" id="setup-guest-section">
+                            <label for="list-guest-count">Number of Guests</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="list-guest-count" min="1" value="1" style="flex: 1;">
+                                <button type="button" id="btn-create-guest-list" class="btn-secondary-outline"
+                                    style="flex: 1; margin: 0; padding: 14px;">Add Guest List</button>
+                            </div>
                         </div>
-                        <button type="submit" class="btn-primary">
+
+                        <div id="dynamic-guests-section" style="display: none; flex-direction: column; gap: 15px;">
+                            <div class="input-group">
+                                <label>Guest Names</label>
+                                <div id="dynamic-guests-container"
+                                    style="display: flex; flex-direction: column; gap: 10px;">
+                                    <!-- Inputs will be dynamically injected here -->
+                                </div>
+                            </div>
+                            <button type="button" id="btn-reset-list"
+                                style="background:none; border:none; color:var(--text-secondary); text-decoration:underline; cursor:pointer; font-size: 0.9rem; align-self: flex-start; padding: 0;">Reset
+                                List</button>
+                        </div>
+                        <button type="submit" class="btn-primary" id="btn-submit-guests" style="display: none;">
                             <span>Add to List</span>
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

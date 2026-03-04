@@ -100,25 +100,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Dynamic Guest List Logic
+    const setupSection = document.getElementById('setup-guest-section');
+    const dynamicSection = document.getElementById('dynamic-guests-section');
+    const dynamicContainer = document.getElementById('dynamic-guests-container');
+    const listGuestCount = document.getElementById('list-guest-count');
+    const btnCreateList = document.getElementById('btn-create-guest-list');
+    const btnResetList = document.getElementById('btn-reset-list');
+    const btnSubmitGuests = document.getElementById('btn-submit-guests');
+
+    btnCreateList.addEventListener('click', () => {
+        const count = parseInt(listGuestCount.value) || 1;
+        dynamicContainer.innerHTML = '';
+        for (let i = 1; i <= count; i++) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'dynamic-guest-name';
+            input.placeholder = `Guest ${i} Name`;
+            input.required = true;
+            input.style.marginBottom = '10px';
+
+            dynamicContainer.appendChild(input);
+        }
+        setupSection.style.display = 'none';
+        dynamicSection.style.display = 'flex';
+        btnSubmitGuests.style.display = 'flex';
+
+        const firstInput = dynamicContainer.querySelector('input');
+        if (firstInput) firstInput.focus();
+    });
+
+    btnResetList.addEventListener('click', () => {
+        setupSection.style.display = 'flex';
+        dynamicSection.style.display = 'none';
+        dynamicContainer.innerHTML = '';
+        btnSubmitGuests.style.display = 'none';
+    });
+
     // Form Submission
     guestForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const nameInput = document.getElementById('guest-name');
-        const countInput = document.getElementById('guest-count');
+        const advisorInput = document.getElementById('advisor-name');
+
+        // Collect dynamic names
+        const guestNameInputs = document.querySelectorAll('.dynamic-guest-name');
+        if (guestNameInputs.length === 0) {
+            alert('Please create a guest list first.');
+            return;
+        }
+
+        let allValid = true;
+        const guestNames = [];
+        guestNameInputs.forEach(input => {
+            const val = input.value.trim();
+            if (!val) allValid = false;
+            else guestNames.push(val);
+        });
+
+        if (!allValid) {
+            alert('Please fill in all guest names.');
+            return;
+        }
+
+        const count = guestNames.length;
+        const guest_name = guestNames.join(', ');
 
         const checkedGroup = document.querySelector('.group-checkbox:checked');
         const group = checkedGroup ? checkedGroup.value : 'Unassigned';
 
-        const name = nameInput.value.trim();
-        const count = parseInt(countInput.value);
+        const name = advisorInput.value.trim();
 
-        if (name && count > 0) {
+        if (name && guest_name && count > 0) {
             // 1. Create the guest object (Optimistic)
             const tempId = 'temp-' + Date.now();
             const newGuest = {
                 id: tempId,
                 name,
+                guest_name,
                 count,
                 group,
                 created_at: new Date().toISOString()
@@ -129,17 +188,21 @@ document.addEventListener('DOMContentLoaded', () => {
             updateUI(true);
 
             // 3. Reset form for better UX
-            nameInput.value = '';
-            countInput.value = '1';
+            advisorInput.value = '';
+            listGuestCount.value = '1';
             groupCheckboxes.forEach(cb => cb.checked = false);
-            nameInput.focus();
+            setupSection.style.display = 'flex';
+            dynamicSection.style.display = 'none';
+            dynamicContainer.innerHTML = '';
+            btnSubmitGuests.style.display = 'none';
+            advisorInput.focus();
 
             // 4. Cloud Synchronization
             if (isSupabaseOnline) {
                 try {
                     const { data, error } = await supabaseClient
                         .from('guests')
-                        .insert([{ name, count, group }])
+                        .insert([{ name, guest_name, count, group }])
                         .select();
 
                     if (error) {
@@ -270,10 +333,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function generateGuestHTML(guest) {
+        const guestNameDisplay = guest.guest_name ? escapeHTML(guest.guest_name) : 'Guest';
         return `
             <li class="guest-item" data-id="${guest.id}">
                 <div class="guest-info">
-                    <span class="name">${escapeHTML(guest.name)}</span>
+                    <span class="name">${guestNameDisplay}</span>
+                    <span class="advisor">Invited by: ${escapeHTML(guest.name)}</span>
                     <span class="count">${guest.count} ${guest.count === 1 ? 'person' : 'people'}</span>
                 </div>
                 <div class="guest-actions">
