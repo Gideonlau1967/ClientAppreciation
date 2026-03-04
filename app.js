@@ -7,10 +7,24 @@ const supabaseClient = window.supabase ? supabase.createClient(SUPABASE_URL, SUP
 
 document.addEventListener('DOMContentLoaded', () => {
     const guestForm = document.getElementById('guest-form');
-    const guestList = document.getElementById('guest-list');
+    const listBranch1 = document.getElementById('guest-list-branch1');
+    const listZenith = document.getElementById('guest-list-zenith');
+    const listCompass = document.getElementById('guest-list-compass');
+    const listAcorn = document.getElementById('guest-list-acorn');
+
+    const emptyBranch1 = document.getElementById('empty-state-branch1');
+    const emptyZenith = document.getElementById('empty-state-zenith');
+    const emptyCompass = document.getElementById('empty-state-compass');
+    const emptyAcorn = document.getElementById('empty-state-acorn');
+
     const totalGuestsDisplay = document.getElementById('total-guests');
-    const totalGroupsDisplay = document.getElementById('total-groups');
-    const emptyState = document.getElementById('empty-state');
+    const maxGuestsDisplay = document.getElementById('max-guests');
+    const availableSlotsDisplay = document.getElementById('available-slots');
+
+    const totalBranch1Display = document.getElementById('total-branch1');
+    const totalZenithDisplay = document.getElementById('total-zenith');
+    const totalCompassDisplay = document.getElementById('total-compass');
+    const totalAcornDisplay = document.getElementById('total-acorn');
 
     let guests = [];
     let isSupabaseOnline = false;
@@ -74,12 +88,27 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    // Single Select Checkbox Logic
+    const groupCheckboxes = document.querySelectorAll('.group-checkbox');
+    groupCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            if (this.checked) {
+                groupCheckboxes.forEach(cb => {
+                    if (cb !== this) cb.checked = false;
+                });
+            }
+        });
+    });
+
     // Form Submission
     guestForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const nameInput = document.getElementById('guest-name');
         const countInput = document.getElementById('guest-count');
+
+        const checkedGroup = document.querySelector('.group-checkbox:checked');
+        const group = checkedGroup ? checkedGroup.value : 'Unassigned';
 
         const name = nameInput.value.trim();
         const count = parseInt(countInput.value);
@@ -91,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: tempId,
                 name,
                 count,
+                group,
                 created_at: new Date().toISOString()
             };
 
@@ -101,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 3. Reset form for better UX
             nameInput.value = '';
             countInput.value = '1';
+            groupCheckboxes.forEach(cb => cb.checked = false);
             nameInput.focus();
 
             // 4. Cloud Synchronization
@@ -108,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const { data, error } = await supabaseClient
                         .from('guests')
-                        .insert([{ name, count }])
+                        .insert([{ name, count, group }])
                         .select();
 
                     if (error) {
@@ -132,34 +163,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Event Delegation for Actions
-    guestList.addEventListener('click', (e) => {
-        const item = e.target.closest('.guest-item');
-        if (!item) return;
+    // Need to listen on ALL guest lists since they are now separated
+    const lists = [listBranch1, listZenith, listCompass, listAcorn];
 
-        const btnIncrease = e.target.closest('.btn-increase');
-        const btnDecrease = e.target.closest('.btn-decrease');
-        const btnDelete = e.target.closest('.btn-delete');
+    lists.forEach(list => {
+        list.addEventListener('click', (e) => {
+            const item = e.target.closest('.guest-item');
+            if (!item) return;
 
-        if (!btnIncrease && !btnDecrease && !btnDelete) return;
+            const btnIncrease = e.target.closest('.btn-increase');
+            const btnDecrease = e.target.closest('.btn-decrease');
+            const btnDelete = e.target.closest('.btn-delete');
 
-        e.preventDefault();
-        e.stopPropagation();
+            if (!btnIncrease && !btnDecrease && !btnDelete) return;
 
-        const guestId = item.dataset.id;
-        const guestIndex = guests.findIndex(g => String(g.id) === String(guestId));
+            e.preventDefault();
+            e.stopPropagation();
 
-        if (guestIndex === -1) {
-            console.warn(`Guest with ID ${guestId} not found in state.`);
-            return;
-        }
+            const guestId = item.dataset.id;
+            const guestIndex = guests.findIndex(g => String(g.id) === String(guestId));
 
-        if (btnDelete) {
-            deleteGuest(guestId, guestIndex);
-        } else if (btnIncrease) {
-            updateGuestCount(guestId, 1);
-        } else if (btnDecrease) {
-            updateGuestCount(guestId, -1);
-        }
+            if (guestIndex === -1) {
+                console.warn(`Guest with ID ${guestId} not found in state.`);
+                return;
+            }
+
+            if (btnDelete) {
+                deleteGuest(guestId, guestIndex);
+            } else if (btnIncrease) {
+                updateGuestCount(guestId, 1);
+            } else if (btnDecrease) {
+                updateGuestCount(guestId, -1);
+            }
+        });
     });
 
     async function deleteGuest(id, index) {
@@ -233,16 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderGuests() {
-        if (guests.length === 0) {
-            guestList.innerHTML = '';
-            emptyState.style.display = 'block';
-            emptyState.innerHTML = 'No guests added yet.';
-            return;
-        }
-
-        emptyState.style.display = 'none';
-        guestList.innerHTML = guests.map(guest => `
+    function generateGuestHTML(guest) {
+        return `
             <li class="guest-item" data-id="${guest.id}">
                 <div class="guest-info">
                     <span class="name">${escapeHTML(guest.name)}</span>
@@ -269,14 +297,65 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
             </li>
-        `).join('');
+        `;
+    }
+
+    function renderGuests() {
+        const branch1Guests = guests.filter(g => g.group === 'Branch 1');
+        const zenithGuests = guests.filter(g => g.group === 'Zenith');
+        const compassGuests = guests.filter(g => g.group === 'Compass');
+        const acornGuests = guests.filter(g => g.group === 'Acorn');
+
+        if (branch1Guests.length === 0) {
+            listBranch1.innerHTML = '';
+            emptyBranch1.style.display = 'block';
+        } else {
+            emptyBranch1.style.display = 'none';
+            listBranch1.innerHTML = branch1Guests.map(generateGuestHTML).join('');
+        }
+
+        if (zenithGuests.length === 0) {
+            listZenith.innerHTML = '';
+            emptyZenith.style.display = 'block';
+        } else {
+            emptyZenith.style.display = 'none';
+            listZenith.innerHTML = zenithGuests.map(generateGuestHTML).join('');
+        }
+
+        if (compassGuests.length === 0) {
+            listCompass.innerHTML = '';
+            emptyCompass.style.display = 'block';
+        } else {
+            emptyCompass.style.display = 'none';
+            listCompass.innerHTML = compassGuests.map(generateGuestHTML).join('');
+        }
+
+        if (acornGuests.length === 0) {
+            listAcorn.innerHTML = '';
+            emptyAcorn.style.display = 'block';
+        } else {
+            emptyAcorn.style.display = 'none';
+            listAcorn.innerHTML = acornGuests.map(generateGuestHTML).join('');
+        }
     }
 
     function updateStats() {
         const totalGuests = guests.reduce((sum, guest) => sum + guest.count, 0);
-        const totalGroups = guests.length;
+        const maxGuests = 50;
+        const availableSlots = Math.max(0, maxGuests - totalGuests);
+
+        const branch1Guests = guests.filter(g => g.group === 'Branch 1').reduce((sum, guest) => sum + guest.count, 0);
+        const zenithGuests = guests.filter(g => g.group === 'Zenith').reduce((sum, guest) => sum + guest.count, 0);
+        const compassGuests = guests.filter(g => g.group === 'Compass').reduce((sum, guest) => sum + guest.count, 0);
+        const acornGuests = guests.filter(g => g.group === 'Acorn').reduce((sum, guest) => sum + guest.count, 0);
+
         animateValue(totalGuestsDisplay, parseInt(totalGuestsDisplay.innerText) || 0, totalGuests, 500);
-        animateValue(totalGroupsDisplay, parseInt(totalGroupsDisplay.innerText) || 0, totalGroups, 500);
+        animateValue(availableSlotsDisplay, parseInt(availableSlotsDisplay.innerText) || 50, availableSlots, 500);
+
+        animateValue(totalBranch1Display, parseInt(totalBranch1Display.innerText) || 0, branch1Guests, 500);
+        animateValue(totalZenithDisplay, parseInt(totalZenithDisplay.innerText) || 0, zenithGuests, 500);
+        animateValue(totalCompassDisplay, parseInt(totalCompassDisplay.innerText) || 0, compassGuests, 500);
+        animateValue(totalAcornDisplay, parseInt(totalAcornDisplay.innerText) || 0, acornGuests, 500);
     }
 
     // Search input removed

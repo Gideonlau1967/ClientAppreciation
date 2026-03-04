@@ -22,14 +22,38 @@
                     <h1>Polaris Group</h1>
                     <div class="sub-title accent">Client Appreciation Night</div>
                     <p class="event-details">Date: 27th March | Venue: Mandala Club</p>
-                    <div class="stats-container">
-                        <div class="stat-card">
-                            <span class="stat-label">Total Guests</span>
-                            <span id="total-guests" class="stat-value">0</span>
+                    <div class="stats-wrapper">
+                        <div class="stats-container primary-stats">
+                            <div class="stat-card">
+                                <span class="stat-label">Max Allowed</span>
+                                <span id="max-guests" class="stat-value">50</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Total Invited</span>
+                                <span id="total-guests" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Available Slots</span>
+                                <span id="available-slots" class="stat-value">50</span>
+                            </div>
                         </div>
-                        <div class="stat-card">
-                            <span class="stat-label">Total Groups</span>
-                            <span id="total-groups" class="stat-value">0</span>
+                        <div class="stats-container secondary-stats">
+                            <div class="stat-card stat-dark">
+                                <span class="stat-label">Branch 1</span>
+                                <span id="total-branch1" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-card stat-dark">
+                                <span class="stat-label">Zenith</span>
+                                <span id="total-zenith" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-card stat-dark">
+                                <span class="stat-label">Compass</span>
+                                <span id="total-compass" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-card stat-dark">
+                                <span class="stat-label">Acorn</span>
+                                <span id="total-acorn" class="stat-value">0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -43,11 +67,33 @@
                     <h2>Number of Guest Invited</h2>
                 </div>
                 <div class="guest-list-wrapper">
-                    <ul id="guest-list" class="guest-list">
-                        <!-- Guest items will be injected here -->
-                    </ul>
-                    <div id="empty-state" class="empty-state">
-                        <p>No guests added yet.</p>
+                    <div class="group-section">
+                        <h3 class="group-header">Branch 1</h3>
+                        <ul id="guest-list-branch1" class="guest-list"></ul>
+                        <div id="empty-state-branch1" class="empty-state">
+                            <p>No guests added yet.</p>
+                        </div>
+                    </div>
+                    <div class="group-section">
+                        <h3 class="group-header">Zenith</h3>
+                        <ul id="guest-list-zenith" class="guest-list"></ul>
+                        <div id="empty-state-zenith" class="empty-state">
+                            <p>No guests added yet.</p>
+                        </div>
+                    </div>
+                    <div class="group-section">
+                        <h3 class="group-header">Compass</h3>
+                        <ul id="guest-list-compass" class="guest-list"></ul>
+                        <div id="empty-state-compass" class="empty-state">
+                            <p>No guests added yet.</p>
+                        </div>
+                    </div>
+                    <div class="group-section">
+                        <h3 class="group-header">Acorn</h3>
+                        <ul id="guest-list-acorn" class="guest-list"></ul>
+                        <div id="empty-state-acorn" class="empty-state">
+                            <p>No guests added yet.</p>
+                        </div>
                     </div>
                 </div>
             </aside>
@@ -58,8 +104,29 @@
                     <h3>Add New Guest</h3>
                     <form id="guest-form" class="guest-form">
                         <div class="input-group">
-                            <label for="guest-name">Primary Name</label>
+                            <label for="guest-name">Advisor Name (Inviter)</label>
                             <input type="text" id="guest-name" name="name" placeholder="e.g. John Doe" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Group</label>
+                            <div class="checkbox-group" id="group-checkboxes">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="group" value="Branch 1" class="group-checkbox">
+                                    <span class="checkbox-custom"></span> Branch 1
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="group" value="Zenith" class="group-checkbox">
+                                    <span class="checkbox-custom"></span> Zenith
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="group" value="Compass" class="group-checkbox">
+                                    <span class="checkbox-custom"></span> Compass
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="group" value="Acorn" class="group-checkbox">
+                                    <span class="checkbox-custom"></span> Acorn
+                                </label>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label for="guest-count">Number of Guests</label>
