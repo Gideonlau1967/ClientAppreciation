@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let guests = [];
     let isSupabaseOnline = false;
+    let isAdminMode = false;
 
     // Check if Supabase is configured
     if (!supabaseClient || SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') {
@@ -70,8 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Realtime Updates: Guard against multiple subscriptions
     let realtimeChannel = null;
+    let subscriptionRetryCount = 0;
+    const MAX_RETRY = 3;
+
     function setupRealtime() {
-        if (realtimeChannel || !supabaseClient) return;
+        if (realtimeChannel || !supabaseClient || subscriptionRetryCount >= MAX_RETRY) return;
 
         console.log('Setting up realtime subscription...');
         realtimeChannel = supabaseClient
@@ -84,6 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Realtime status:', status);
                 if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
                     realtimeChannel = null;
+                    subscriptionRetryCount++;
+                    if (subscriptionRetryCount >= MAX_RETRY) {
+                        console.warn('Max realtime retries reached. Realtime updates disabled. Please check if "Realtime" is enabled for the "guests" table in your Supabase dashboard.');
+                    }
+                } else if (status === 'SUBSCRIBED') {
+                    subscriptionRetryCount = 0; // Reset on success
                 }
             });
     }
@@ -237,8 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const btnIncrease = e.target.closest('.btn-increase');
             const btnDecrease = e.target.closest('.btn-decrease');
             const btnDelete = e.target.closest('.btn-delete');
+            const btnEdit = e.target.closest('.btn-edit');
 
-            if (!btnIncrease && !btnDecrease && !btnDelete) return;
+            if (!btnIncrease && !btnDecrease && !btnDelete && !btnEdit) return;
 
             e.preventDefault();
             e.stopPropagation();
@@ -257,9 +268,137 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateGuestCount(guestId, 1);
             } else if (btnDecrease) {
                 updateGuestCount(guestId, -1);
+            } else if (btnEdit) {
+                toggleEditMode(item, guestId);
             }
         });
     });
+
+    // Admin Toggle Logic
+    const btnAdminLogin = document.getElementById('btn-admin-login');
+    const adminPasswordInput = document.getElementById('admin-password-input');
+
+    btnAdminLogin.addEventListener('click', (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        if (!isAdminMode) {
+            if (adminPasswordInput.style.display === 'none') {
+                adminPasswordInput.style.display = 'block';
+                adminPasswordInput.focus();
+            } else {
+                validateAdminPassword();
+            }
+        } else {
+            isAdminMode = false;
+            document.body.classList.remove('admin-enabled');
+            btnAdminLogin.style.color = 'var(--text-secondary)';
+            adminPasswordInput.style.display = 'none';
+            adminPasswordInput.value = '';
+            console.log('Admin mode disabled.');
+        }
+    });
+
+    adminPasswordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            validateAdminPassword();
+        }
+    });
+
+    function validateAdminPassword() {
+        const password = adminPasswordInput.value;
+        if (password === '8888') {
+            isAdminMode = true;
+            document.body.classList.add('admin-enabled');
+            btnAdminLogin.style.color = 'var(--accent-color)';
+            adminPasswordInput.style.display = 'none';
+            adminPasswordInput.value = '';
+            console.log('Admin mode enabled.');
+        } else {
+            alert('Incorrect password.');
+            adminPasswordInput.value = '';
+            adminPasswordInput.focus();
+        }
+    }
+
+    function toggleEditMode(item, id) {
+        const guest = guests.find(g => String(g.id) === String(id));
+        if (!guest) return;
+
+        const infoDiv = item.querySelector('.guest-info');
+        const isEditing = infoDiv.querySelector('.edit-container');
+
+        if (isEditing) {
+            // Save logic
+            const nameInput = infoDiv.querySelector('.name-edit-input');
+            const advisorInput = infoDiv.querySelector('.advisor-edit-input');
+            const newName = nameInput.value.trim();
+            const newAdvisor = advisorInput.value.trim();
+
+            if (newName && newAdvisor) {
+                saveEdit(id, newName, newAdvisor);
+            } else {
+                renderGuests(); // Reset if empty
+            }
+        } else {
+            // Enter edit mode
+            infoDiv.innerHTML = `
+                <div class="edit-container" style="width: 100%;">
+                    <input type="text" class="edit-input name-edit-input" value="${escapeHTML(guest.guest_name)}" placeholder="Guest Name">
+                    <input type="text" class="edit-input advisor-edit-input" value="${escapeHTML(guest.name)}" placeholder="Advisor Name">
+                    <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Press Edit again or Enter to save</p>
+                </div>
+            `;
+            const firstInput = infoDiv.querySelector('input');
+            firstInput.focus();
+
+            // Handle enter key
+            infoDiv.querySelectorAll('input').forEach(input => {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const nameInput = infoDiv.querySelector('.name-edit-input');
+                        const advisorInput = infoDiv.querySelector('.advisor-edit-input');
+                        saveEdit(id, nameInput.value.trim(), advisorInput.value.trim());
+                    }
+                });
+            });
+        }
+    }
+
+    async function saveEdit(id, newGuestName, newAdvisorName) {
+        const guestIndex = guests.findIndex(g => String(g.id) === String(id));
+        if (guestIndex === -1) return;
+
+        const oldGuest = { ...guests[guestIndex] };
+        guests[guestIndex] = { ...oldGuest, guest_name: newGuestName, name: newAdvisorName };
+        updateUI(true);
+
+        if (isSupabaseOnline && !String(id).startsWith('temp-')) {
+            try {
+                // Use the original ID from the object to preserve its type (integer vs string)
+                const { data, error } = await supabaseClient
+                    .from('guests')
+                    .update({ guest_name: newGuestName, name: newAdvisorName })
+                    .eq('id', oldGuest.id)
+                    .select();
+
+                if (error) {
+                    console.error('Update failed:', error);
+                    guests[guestIndex] = oldGuest;
+                    updateUI(true);
+                    alert('Sync failed: ' + error.message);
+                } else {
+                    console.log('Update successful:', data);
+                }
+            } catch (err) {
+                console.error('Update connection error:', err);
+                guests[guestIndex] = oldGuest;
+                updateUI(true);
+            }
+        }
+    }
 
     async function deleteGuest(id, index) {
         // Optimistic Delete (No more prompt)
@@ -272,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const { error } = await supabaseClient
                     .from('guests')
                     .delete()
-                    .eq('id', id);
+                    .eq('id', guestToDelete.id);
 
                 if (error) {
                     console.error('Delete failed:', error);
@@ -306,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const { error } = await supabaseClient
                     .from('guests')
                     .update({ count: newCount })
-                    .eq('id', id);
+                    .eq('id', guest.id);
 
                 if (error) {
                     console.error('Update failed:', error);
@@ -342,19 +481,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="count">${guest.count} ${guest.count === 1 ? 'person' : 'people'}</span>
                 </div>
                 <div class="guest-actions">
-                    <button type="button" class="btn-icon btn-decrease" title="Decrease Count">
+                    <button type="button" class="btn-icon btn-edit admin-only" title="Edit Guest">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button type="button" class="btn-icon btn-decrease admin-only" title="Decrease Count">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                     </button>
                     <span class="count-display">${guest.count}</span>
-                    <button type="button" class="btn-icon btn-increase" title="Increase Count">
+                    <button type="button" class="btn-icon btn-increase admin-only" title="Increase Count">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                     </button>
-                    <button type="button" class="btn-icon btn-delete" title="Delete Guest">
+                    <button type="button" class="btn-icon btn-delete admin-only" title="Delete Guest">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>

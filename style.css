@@ -656,3 +656,37 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.1);
 }
+
+/* Admin Mode Styles */
+.admin-only {
+    display: none !important;
+}
+
+body.admin-enabled .admin-only {
+    display: flex !important;
+}
+
+body.admin-enabled .admin-only.inline-block {
+    display: inline-block !important;
+}
+
+.edit-input {
+    padding: 8px 12px;
+    border: 1px solid var(--accent-color);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.advisor-edit-input {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.btn-edit:hover {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+    color: #0284c7;
+}
