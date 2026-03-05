@@ -120,6 +120,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSubmitGuests = document.getElementById('btn-submit-guests');
 
     btnCreateList.addEventListener('click', () => {
+        const advisorInput = document.getElementById('advisor-name');
+        if (!advisorInput.value.trim()) {
+            alert('Please enter an Advisor Name first.');
+            return;
+        }
+
+        const checkedGroup = document.querySelector('.group-checkbox:checked');
+        if (!checkedGroup) {
+            alert('Please select a group first.');
+            return;
+        }
+
         const count = parseInt(listGuestCount.value) || 1;
         dynamicContainer.innerHTML = '';
         for (let i = 1; i <= count; i++) {
@@ -177,7 +189,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const guest_name = guestNames.join(', ');
 
         const checkedGroup = document.querySelector('.group-checkbox:checked');
-        const group = checkedGroup ? checkedGroup.value : 'Unassigned';
+        if (!checkedGroup) {
+            alert('Please select a group.');
+            return;
+        }
+        const group = checkedGroup.value;
 
         const name = advisorInput.value.trim();
 
