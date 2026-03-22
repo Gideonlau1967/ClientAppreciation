@@ -267,6 +267,7 @@ body {
     font-size: 1rem;
     color: var(--text-primary);
     margin-bottom: 2px;
+    white-space: pre-wrap;
 }
 
 .guest-info .advisor {

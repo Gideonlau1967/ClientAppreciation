@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const count = guestNames.length;
-        const guest_name = guestNames.join(', ');
+        const guest_name = guestNames.join('\n');
 
         const checkedGroup = document.querySelector('.group-checkbox:checked');
         if (!checkedGroup) {
@@ -362,23 +362,21 @@ document.addEventListener('DOMContentLoaded', () => {
             // Enter edit mode
             infoDiv.innerHTML = `
                 <div class="edit-container" style="width: 100%;">
-                    <input type="text" class="edit-input name-edit-input" value="${escapeHTML(guest.guest_name)}" placeholder="Guest Name">
+                    <textarea class="edit-input name-edit-input" placeholder="Guest Name" rows="3" style="resize: vertical;">${escapeHTML(guest.guest_name)}</textarea>
                     <input type="text" class="edit-input advisor-edit-input" value="${escapeHTML(guest.name)}" placeholder="Advisor Name">
-                    <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Press Edit again or Enter to save</p>
+                    <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Press Edit/Save button to confirm changes</p>
                 </div>
             `;
-            const firstInput = infoDiv.querySelector('input');
+            const firstInput = infoDiv.querySelector('textarea');
             firstInput.focus();
 
-            // Handle enter key
-            infoDiv.querySelectorAll('input').forEach(input => {
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        const nameInput = infoDiv.querySelector('.name-edit-input');
-                        const advisorInput = infoDiv.querySelector('.advisor-edit-input');
-                        saveEdit(id, nameInput.value.trim(), advisorInput.value.trim());
-                    }
-                });
+            // Handle enter key from advisor input only (textarea needs enter for new lines)
+            const advisorEditInput = infoDiv.querySelector('.advisor-edit-input');
+            advisorEditInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const nameInput = infoDiv.querySelector('.name-edit-input');
+                    saveEdit(id, nameInput.value.trim(), advisorEditInput.value.trim());
+                }
             });
         }
     }
